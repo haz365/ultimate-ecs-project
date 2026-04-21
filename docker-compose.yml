@@ -1,0 +1,86 @@
+# docker-compose.yml
+# Runs all three services + supporting infrastructure locally
+# No AWS credentials needed — uses local PostgreSQL and Redis
+
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  # Shared database for all three services
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB:       urlshortener
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────
+  # Cache layer for the api service
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── API Service (Python) ───────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL:  postgresql://postgres:postgres@postgres:5432/urlshortener
+      REDIS_URL:     redis://redis:6379
+      SQS_QUEUE_URL: ""          # empty locally — SQS not available
+      AWS_REGION:    eu-west-2
+      HOST:          localhost:8080
+      PORT:          "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ── Worker Service (Go) ────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    environment:
+      DATABASE_URL:  postgresql://postgres:postgres@postgres:5432/urlshortener
+      SQS_QUEUE_URL: ""          # empty locally — worker will sleep and retry
+      AWS_REGION:    eu-west-2
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Dashboard Service (Go) ─────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/urlshortener
+      PORT:         "8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

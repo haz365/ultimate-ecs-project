@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Go
+*.exe
+*.test
+vendor/
+
+# Node (for any tooling)
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!example.tfvars
+crash.log
+
+# Docker
+.docker/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
