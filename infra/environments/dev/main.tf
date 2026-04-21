@@ -20,5 +20,12 @@ module "ecr" {
   environment = var.environment
 }
 
-
+# ─── SECURITY ────────────────────────────────────────────────
+module "security" {
+  source      = "../../modules/security"
+  project     = var.project
+  environment = var.environment
+  vpc_id      = module.vpc.vpc_id
+  vpc_cidr    = module.vpc.vpc_cidr
+}
 

@@ -18,3 +18,10 @@ output "ecr_repository_urls" {
   value       = module.ecr.repository_urls
 }
 
+output "alb_sg_id" {
+  value = module.security.alb_sg_id
+}
+
+output "api_sg_id" {
+  value = module.security.api_sg_id
+}
